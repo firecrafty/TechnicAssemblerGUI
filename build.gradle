@@ -1,0 +1,22 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName="${main_class}"
+
+jar {
+    manifest.mainAttributes(
+            "Main-Class": "${main_class}",
+            "Created-By": "${System.getProperty('java.vm.version')} + (${System.getProperty('java.vm.vendor')})",
+            "Implementation-Title": project.name,
+            "Implementation-Version": project.version,
+    )
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+repositories {
+    mavenCentral()
+}
+dependencies {
+   compile 'com.github.firecrafty.technicassembler:TechnicAssembler:1.2.1'
+}

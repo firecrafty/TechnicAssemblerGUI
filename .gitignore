@@ -1,0 +1,6 @@
+/.gradle/
+/build/
+/.nb-gradle/
+/.nb-gradle-properties
+/TechnicAssembler.log
+*.form
