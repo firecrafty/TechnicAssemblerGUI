@@ -1,6 +1,9 @@
 package com.github.firecrafty.technicassemblergui;
 
+import com.github.firecrafty.technicassembler.Side;
 import com.github.firecrafty.technicassembler.TechnicAssembler;
+import com.github.firecrafty.technicassembler.ZipFile;
+import com.github.firecrafty.technicassembler.logging.SimpleLogger;
 import java.io.File;
 import javax.swing.JFileChooser;
 
@@ -10,6 +13,11 @@ import javax.swing.JFileChooser;
  */
 public class MainWindow extends javax.swing.JFrame {
     private File packDir = TechnicAssembler.getWorkingDirectory();
+    protected static SimpleLogger logger = new SimpleLogger("TechnicAssembler", new File("TechnicAssembler.log"));
+    private String modpackName;
+    private String modpackVersion;
+    private boolean buildClient;
+    private boolean buildServer;
     /**
      * Creates new form MainWindow
      */
@@ -34,6 +42,10 @@ public class MainWindow extends javax.swing.JFrame {
         modpackFolderButton = new javax.swing.JButton();
         folderText = new javax.swing.JTextField();
         folderLabel = new javax.swing.JLabel();
+        submit = new javax.swing.JButton();
+        clientBox = new javax.swing.JCheckBox();
+        serverBox = new javax.swing.JCheckBox();
+        statusLabel = new javax.swing.JLabel();
 
         fileChooser.setCurrentDirectory(TechnicAssembler.getWorkingDirectory());
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -45,29 +57,14 @@ public class MainWindow extends javax.swing.JFrame {
 
         modpackNameField.setText("Modpack");
         modpackNameField.setToolTipText("");
-        modpackNameField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                modpackNameFieldActionPerformed(evt);
-            }
-        });
 
         modpackNameLabel.setText("Modpack Name");
 
         modpackVersionField.setText("0.0.0");
-        modpackVersionField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                modpackVersionFieldActionPerformed(evt);
-            }
-        });
 
         modpackVersionLabel.setText("Modpack Version");
 
         modpackFolderButton.setText("Browse");
-        modpackFolderButton.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                modpackFolderButtonMouseClicked(evt);
-            }
-        });
         modpackFolderButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 modpackFolderButtonActionPerformed(evt);
@@ -79,6 +76,31 @@ public class MainWindow extends javax.swing.JFrame {
 
         folderLabel.setText("Modpack Folder");
         folderLabel.setToolTipText("Defaults to current directory");
+
+        submit.setText("Zip Modpack");
+        submit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                submitActionPerformed(evt);
+            }
+        });
+
+        clientBox.setSelected(buildClient);
+        clientBox.setText("Build Client");
+        clientBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clientBoxActionPerformed(evt);
+            }
+        });
+
+        serverBox.setSelected(buildServer);
+        serverBox.setText("Build Server");
+        serverBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                serverBoxActionPerformed(evt);
+            }
+        });
+
+        statusLabel.setText("Ready");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -99,6 +121,17 @@ public class MainWindow extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(modpackFolderButton)))
                 .addGap(70, 70, 70))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(57, 57, 57)
+                .addComponent(clientBox)
+                .addGap(62, 62, 62)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(submit, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(serverBox)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(53, 53, 53)
+                        .addComponent(statusLabel)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -116,37 +149,52 @@ public class MainWindow extends javax.swing.JFrame {
                     .addComponent(folderText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(modpackFolderButton)
                     .addComponent(folderLabel))
-                .addContainerGap(461, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(clientBox)
+                    .addComponent(serverBox))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 328, Short.MAX_VALUE)
+                .addComponent(statusLabel)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(submit)
+                .addGap(35, 35, 35))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void modpackVersionFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modpackVersionFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_modpackVersionFieldActionPerformed
+    private void submitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_submitActionPerformed
+       submit.setEnabled(false);
+       parseData();
+       TechnicAssembler.setModpackName(modpackName);
+       TechnicAssembler.setModpackVersion(modpackVersion);
+       TechnicAssembler.setPackDir(packDir);
+       zipContents();
+       statusLabel.setText("Modpack Build Successfully");
+       submit.setEnabled(true);
+    }//GEN-LAST:event_submitActionPerformed
 
-    private void modpackNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modpackNameFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_modpackNameFieldActionPerformed
-
-    private void modpackFolderButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_modpackFolderButtonMouseClicked
+    private void modpackFolderButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modpackFolderButtonActionPerformed
         int returnVal = fileChooser.showOpenDialog(this);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             folderText.setText(fileChooser.getSelectedFile().toString());
-            
+            packDir = fileChooser.getSelectedFile();
         }
-        
-    }//GEN-LAST:event_modpackFolderButtonMouseClicked
-
-    private void modpackFolderButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modpackFolderButtonActionPerformed
-        // TODO add your handling code here:
     }//GEN-LAST:event_modpackFolderButtonActionPerformed
+
+    private void serverBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serverBoxActionPerformed
+        buildServer = !buildServer;
+    }//GEN-LAST:event_serverBoxActionPerformed
+
+    private void clientBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clientBoxActionPerformed
+        buildClient = !buildClient;
+    }//GEN-LAST:event_clientBoxActionPerformed
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        logger.startLog();
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -176,9 +224,11 @@ public class MainWindow extends javax.swing.JFrame {
                 new MainWindow().setVisible(true);
             }
         });
+        logger.stopLog();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox clientBox;
     private javax.swing.JFileChooser fileChooser;
     private javax.swing.JLabel folderLabel;
     private javax.swing.JTextField folderText;
@@ -187,5 +237,27 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JLabel modpackNameLabel;
     private javax.swing.JTextField modpackVersionField;
     private javax.swing.JLabel modpackVersionLabel;
+    private javax.swing.JCheckBox serverBox;
+    private javax.swing.JLabel statusLabel;
+    private javax.swing.JButton submit;
     // End of variables declaration//GEN-END:variables
+    private void parseData() {
+        modpackName = modpackNameField.getText();
+        modpackVersion = modpackVersionField.getText();
+    }
+    private void zipContents() {
+        ZipFile zipFile;
+        if(buildClient) {
+            logger.info("Zipping client...");
+            zipFile = new ZipFile(Side.CLIENT);
+            zipFile.generateFileList();
+            zipFile.zipIt();
+        }
+        if(buildServer) {
+            logger.info("Zipping server...");
+            zipFile = new ZipFile(Side.SERVER);
+            zipFile.generateFileList();
+            zipFile.zipIt();
+        }
+    }
 }

@@ -1,6 +1,10 @@
 apply plugin: 'java'
 apply plugin: 'application'
 
+archivesBaseName = app_name
+group = package_group
+version = app_version
+
 mainClassName="${main_class}"
 
 jar {
@@ -18,5 +22,5 @@ repositories {
     mavenCentral()
 }
 dependencies {
-   compile 'com.github.firecrafty.technicassembler:TechnicAssembler:1.2.1'
+   compile 'com.github.firecrafty.technicassembler:TechnicAssembler:1.2.2'
 }
