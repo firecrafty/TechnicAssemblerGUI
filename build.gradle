@@ -1,3 +1,7 @@
+plugins {
+  id "edu.sc.seis.macAppBundle" version "2.1.6"
+}
+
 apply plugin: 'java'
 apply plugin: 'application'
 
@@ -23,4 +27,8 @@ repositories {
 }
 dependencies {
    compile 'com.github.firecrafty.technicassembler:TechnicAssembler:1.2.2'
+}
+macAppBundle {
+    mainClassName = main_class
+    bundleJRE = true
 }
