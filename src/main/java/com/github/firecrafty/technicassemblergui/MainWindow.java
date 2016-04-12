@@ -4,27 +4,34 @@ import com.github.firecrafty.technicassembler.Side;
 import com.github.firecrafty.technicassembler.TechnicAssembler;
 import com.github.firecrafty.technicassembler.ZipFile;
 import com.github.firecrafty.technicassembler.logging.SimpleLogger;
+import java.awt.Color;
 import java.io.File;
 import javax.swing.JFileChooser;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  *
  * @author firecrafty
  */
 public class MainWindow extends javax.swing.JFrame {
+
     private File packDir = TechnicAssembler.getWorkingDirectory();
     protected static SimpleLogger logger = new SimpleLogger("TechnicAssembler", new File("TechnicAssembler.log"));
     private String modpackName;
     private String modpackVersion;
     private boolean buildClient;
     private boolean buildServer;
+
     /**
      * Creates new form MainWindow
      */
     public MainWindow() {
         initComponents();
+        customListeners();
     }
 
     /**
@@ -219,41 +226,63 @@ public class MainWindow extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
+    /**
+     * Runs the code to zip up the modpack. Called when the "Zip Modpack" button
+     * is pressed.
+     *
+     * @param evt The event that causes the method call
+     */
     private void submitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_submitActionPerformed
-       submit.setEnabled(false);
-       parseData();
-       TechnicAssembler.setModpackName(modpackName);
-       TechnicAssembler.setModpackVersion(modpackVersion);
-       TechnicAssembler.setPackDir(packDir);
-       zipContents();
-       statusLabel.setText("Modpack Build Successfully");
-       submit.setEnabled(true);
+        submit.setEnabled(false);
+        parseData();
+        TechnicAssembler.setModpackName(modpackName);
+        TechnicAssembler.setModpackVersion(modpackVersion);
+        TechnicAssembler.setPackDir(packDir);
+        zipContents();
+        statusLabel.setText("Modpack Built Successfully");
+        submit.setEnabled(true);
     }//GEN-LAST:event_submitActionPerformed
-
+    /**
+     * Opens a file selection window. Called when the "Browse" button is
+     * clicked.
+     *
+     * @param evt The event that causes the method call
+     */
     private void modpackFolderButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modpackFolderButtonActionPerformed
         int returnVal = fileChooser.showOpenDialog(this);
-        if(returnVal == JFileChooser.APPROVE_OPTION) {
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
             folderText.setText(fileChooser.getSelectedFile().toString());
             packDir = fileChooser.getSelectedFile();
         }
     }//GEN-LAST:event_modpackFolderButtonActionPerformed
-
+    /**
+     * Called when the Build Server check box is interacted with.
+     *
+     * @param evt The event that causes the method call
+     */
     private void serverBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serverBoxActionPerformed
         buildServer = !buildServer;
     }//GEN-LAST:event_serverBoxActionPerformed
-
+    /**
+     * Called when the Build Client check box is interacted with.
+     *
+     * @param evt The event that causes the method call
+     */
     private void clientBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clientBoxActionPerformed
         buildClient = !buildClient;
     }//GEN-LAST:event_clientBoxActionPerformed
 
     /**
+     * Starts the program and sets UI look and feel.
+     *
      * @param args the command line arguments
      */
     public static void main(String args[]) {
         logger.startLog();
         Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() { logger.stopLog(); }
+            public void run() {
+                logger.stopLog();
+            }
         });
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -299,23 +328,82 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JLabel statusLabel;
     private javax.swing.JButton submit;
     // End of variables declaration//GEN-END:variables
+    /**
+     * Parses the data in the text boxes.
+     */
     private void parseData() {
         modpackName = modpackNameField.getText();
         modpackVersion = modpackVersionField.getText();
     }
+
+    /**
+     * Does the actual zipping. (Uses the command line version of
+     * TechnicLauncher as a library)
+     */
     private void zipContents() {
         ZipFile zipFile;
-        if(buildClient) {
+        if (buildClient) {
             logger.info("Zipping client...");
             zipFile = new ZipFile(Side.CLIENT);
             zipFile.generateFileList();
             zipFile.zipIt();
         }
-        if(buildServer) {
+        if (buildServer) {
             logger.info("Zipping server...");
             zipFile = new ZipFile(Side.SERVER);
             zipFile.generateFileList();
             zipFile.zipIt();
         }
     }
+
+    /**
+     * Initializes all the listeners that NetBeans does not provide.
+     */
+    private void customListeners() {
+        modpackNameField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                checkData(modpackNameField);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                checkData(modpackNameField);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                checkData(modpackNameField);
+            }
+        });
+        modpackVersionField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                checkData(modpackVersionField);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                checkData(modpackVersionField);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                checkData(modpackVersionField);
+            }
+        });
+    }
+
+    private void checkData(JTextField textField) {
+        if (textField.getText().isEmpty()) {
+            submit.setEnabled(false);
+            textField.setBackground(Color.PINK);
+            statusLabel.setText("Please enter required data.");
+        } else {
+            submit.setEnabled(true);
+            textField.setBackground(Color.WHITE);
+            statusLabel.setText("Ready");
+        }
+    }
+
 }
